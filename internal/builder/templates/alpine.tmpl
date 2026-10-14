@@ -1,0 +1,18 @@
+FROM {{.Base}}
+RUN apk add --no-cache openssh sudo bash iproute2{{if .Extra}} {{.Extra}}{{end}} \
+ && mkdir -p /var/run/sshd /run/sshd
+RUN adduser -D -s /bin/bash {{.User}} \
+ && echo '{{.User}} ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/{{.User}} \
+ && chmod 440 /etc/sudoers.d/{{.User}} \
+ && mkdir -p /etc/ssh/sshd_config.d \
+ && printf '%s\n' \
+      'PermitRootLogin no' \
+      'PasswordAuthentication {{.PasswordAuth}}' \
+      'PubkeyAuthentication yes' \
+      'KbdInteractiveAuthentication no' \
+      > /etc/ssh/sshd_config.d/lanbox.conf
+COPY entrypoint.sh /usr/local/bin/lanbox-entrypoint
+COPY bootstrap.sh /usr/local/bin/lanbox-bootstrap
+RUN chmod 755 /usr/local/bin/lanbox-entrypoint /usr/local/bin/lanbox-bootstrap
+ENTRYPOINT ["/usr/local/bin/lanbox-entrypoint"]
+EXPOSE 22

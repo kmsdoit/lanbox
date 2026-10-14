@@ -1,0 +1,40 @@
+version: 2
+
+project_name: lanbox
+
+builds:
+  - id: lanbox
+    main: ./cmd/lanbox
+    binary: lanbox
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/kmsdoit/lanbox/internal/cli.Version={{ .Version }}
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+nfpms:
+  - id: lanbox
+    package_name: lanbox
+    vendor: lanbox
+    homepage: https://github.com/kmsdoit/lanbox
+    maintainer: lanbox
+    description: LAN IP를 가진 OS 컨테이너 생성·삭제 CLI
+    formats:
+      - deb
+    bindir: /usr/local/bin
+
+release:
+  github:
+    owner: kmsdoit
+    name: lanbox
+
+changelog:
+  disable: true

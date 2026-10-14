@@ -1,0 +1,9 @@
+aliases:
+  ubuntu: ubuntu:24.04
+  debian: debian:12
+  rocky: rockylinux:9
+  alma: almalinux:9
+  fedora: fedora:latest
+  alpine: alpine:latest
+  opensuse: opensuse/leap:15.6
+  arch: archlinux:latest

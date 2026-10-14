@@ -1,0 +1,38 @@
+FROM {{.Base}}
+RUN zypper --non-interactive refresh \
+ && zypper --non-interactive install -y --no-recommends openssh sudo iproute2{{if .Extra}} {{.Extra}}{{end}}{{if .Systemd}} systemd{{end}} \
+ && zypper clean -a \
+ && mkdir -p /var/run/sshd /run/sshd
+RUN useradd -m -s /bin/bash {{.User}} \
+ && echo '{{.User}} ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/{{.User}} \
+ && chmod 440 /etc/sudoers.d/{{.User}} \
+ && mkdir -p /etc/ssh/sshd_config.d \
+ && printf '%s\n' \
+      'PermitRootLogin no' \
+      'PasswordAuthentication {{.PasswordAuth}}' \
+      'PubkeyAuthentication yes' \
+      'KbdInteractiveAuthentication no' \
+      > /etc/ssh/sshd_config.d/lanbox.conf
+COPY entrypoint.sh /usr/local/bin/lanbox-entrypoint
+COPY bootstrap.sh /usr/local/bin/lanbox-bootstrap
+RUN chmod 755 /usr/local/bin/lanbox-entrypoint /usr/local/bin/lanbox-bootstrap
+{{if .Systemd}}
+RUN printf '%s\n' \
+      '[Unit]' \
+      'Description=lanbox SSH bootstrap' \
+      'After=network.target' \
+      '[Service]' \
+      'Type=oneshot' \
+      'ExecStart=/usr/local/bin/lanbox-bootstrap' \
+      'RemainAfterExit=yes' \
+      '[Install]' \
+      'WantedBy=multi-user.target' \
+      > /etc/systemd/system/lanbox-bootstrap.service \
+ && mkdir -p /etc/systemd/system/multi-user.target.wants \
+ && ln -sf /etc/systemd/system/lanbox-bootstrap.service /etc/systemd/system/multi-user.target.wants/lanbox-bootstrap.service \
+ && ln -sf /usr/lib/systemd/system/sshd.service /etc/systemd/system/multi-user.target.wants/sshd.service || true
+ENTRYPOINT ["/sbin/init"]
+{{else}}
+ENTRYPOINT ["/usr/local/bin/lanbox-entrypoint"]
+{{end}}
+EXPOSE 22
